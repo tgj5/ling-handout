@@ -1,0 +1,15 @@
+[package]
+name = "ling-handout"
+version = "0.1.0"
+entrypoint = "lib.typ"
+authors = ["Turner Jordan"]
+license = "MIT-0"
+description = "A handout template for linguistics, with continuously numbered examples."
+compiler = "0.15.1"
+categories = ["report"]
+disciplines = ["linguistics"]
+keywords = ["handout", "linguistics", "examples"]
+
+[template]
+path = "template"
+entrypoint = "main.typ"

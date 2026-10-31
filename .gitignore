@@ -1,3 +1,4 @@
 *.pdf
 test-handout/
 .DS_Store
+test-preview/

@@ -35,12 +35,12 @@
 ///
 /// `handout-title` and `handout-author` also set the document metadata.
 /// `handout-date` only affects the rendered header, not the metadata date.
-/// `handout-date` and `location` are optional: leave them out or set them to `none` to omit them from your header.
+/// `handout-title`, `handout-author`, `handout-date`, `group`, and `location` are optional. Leave them out or set them to `none` to omit them.
 #let ling-handout(
-  handout-title: "Untitled",
-  handout-author: "FirstName LastName",
+  handout-title: none,
+  handout-author: none,
   handout-date: none,
-  group: "Course",
+  group: none,
   location: none,
   paper: "us-letter",
   margin: 1in,
@@ -50,20 +50,27 @@
   spacing: 0.9em,
   body,
 ) = {
-  set document(title: handout-title, author: to-plain(handout-author))
+  set document(title: handout-title) if handout-title != none 
+  set document(author: to-plain(handout-author)) if handout-author != none
+
+  let date = if type(handout-date) == datetime {
+    handout-date.display()
+  } else {
+    handout-date
+  }
+
   set page(
     paper: paper,
     margin: margin,
     numbering: "1",
     header: {
       set text(weight: "bold", size: 1em - 1pt)
-      group 
-      if location != none [, #location]
+      (group, location).filter(x => x != none).join(", ")
       h(1fr)
-      handout-author
-      if handout-date != none [, #if type(handout-date) == datetime { handout-date.display() } else { handout-date }]
+      (handout-author, date).filter(x => x != none).join(", ")
     },
   )
+
   set text(font: font, size: font-size)
   set par(justify: true, leading: leading, spacing: spacing)
   set heading(numbering: "1.a")
@@ -89,14 +96,14 @@
     if el != none and el.func() == figure and el.kind == "example" {
       link(el.location(), context {
         let n = counter(figure.where(kind: "example")).at(el.location())
-        [(#numbering("1", ..n))]
+        numbering(el.numbering, ..n)
       })
     } else {
       it
     }
   }
 
-  title()
+  if handout-title != none { title() }
 
   body
 }

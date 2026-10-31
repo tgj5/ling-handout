@@ -1,4 +1,4 @@
-#import "@local/ling-handout:0.1.0": ling-handout, ex
+#import "@preview/ling-handout:0.1.0": ling-handout, ex
 
 #show: ling-handout.with(
   handout-title: [Your handout title],

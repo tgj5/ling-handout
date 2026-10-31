@@ -1,69 +1,125 @@
 # ling-handout
 
-A Typst template for linguistics handouts. Examples are rendered as (1), (2),... and numbered continuously across the whole document. Sub-lists inside an example render as (i), (ii), ...
+A Typst template for linguistics handouts. Examples are numbered (1), (2), ... continuously across the whole document. Sub-lists inside an example are numbered (i), (ii), ... And references to examples render as (n) with a link back to the example.
 
-## Usage
+## Quick start
+
+Start a new project from the template:
+
+```
+typst init @preview/ling-handout:0.1.0
+```
+
+Or import it into an existing document:
 
 ```typst
 #import "@preview/ling-handout:0.1.0": ling-handout, ex
 
 #show: ling-handout.with(
-  handout-title: [Title],
+  handout-title: [Your Title],
   handout-author: "Your Name",
-  group: "Course",
+  handout-date: datetime.today(),
+  group: "Your Group",
+  location: "Your Institution",
 )
 
-#ex[
-  + First.
-  + Second.
-] <ex-1>
+= Introduction
 
-See @ex-1.
+#ex[
+  + If Oswald didn't shoot Kennedy, someone else did.
+  + If Oswald hadn't shot Kennedy, someone else would have.
+] <ex-conditionals>
+
+Referencing examples from anywhere in the document, like @ex-conditionals, is easy. 
 ```
 
-Or start from the template: `typst init @preview/ling-handout:0.1.0`
+## Examples: the `ex` function
+
+`ex` creates a numbered example. Numbering runs continuously through the whole document, independent of headings, as is customary in linguistics.
+
+`ex` only displays correctly inside a document wrapped with `#show: ling-handout.with(..)`, which supplies the layout and reference styling.
+
+### Single examples
+
+```typst
+#ex[Every linguist who knows about donkey sentences loves them.]
+```
+
+renders as
+
+```
+(1)  Every linguist who knows about donkey sentences loves them.
+```
+
+### Examples with sub-items
+
+Use a numbered list (`+`) inside the example. Sub-items are numbered (i), (ii), ...
+
+```typst
+#ex[
+  + John left.
+  + \*Left John.
+]
+```
+
+renders as
+
+```
+(2)  (i)  John left.
+     (ii) *Left John.
+```
+
+Note that `*` starts bold text in Typst, so write `\*` for an ungrammaticality star. The same goes for `#`, `_`, and `@`.
+
+### Referring to examples
+
+Put a label directly after the closing bracket of `ex`, then reference it with `@` and the label name:
+
+```typst
+#ex[The present King of France is bald.] <ex-russell>
+
+As @ex-russell shows, *the* requires a unique referent that exists (or at some point existed) in the evaluation world.
+```
+
+The reference renders as `(3)` (whatever the example's number is) and links to the example. The label's angle brackets are only used where it's defined, not in the reference.
+
+### Current limitations
+
+- Only whole examples can be referenced. Individual sub-items like (3.i) can't be labeled yet, so write the suffix manually in plain text.
+- Sub-items always use (i), (ii), ... numbering.
+
+### The example counter
+
+Examples are figures of kind `"example"`, so their counter can be accessed directly. For instance, to restart numbering at (1), e.g. for an appendix:
+
+```typst
+#counter(figure.where(kind: "example")).update(0)
+```
 
 ## Parameters
 
 | Parameter | Default | Notes |
 |---|---|---|
-| `handout-title` | `"Untitled"` | `string` or `content`; also sets `document.title` |
-| `handout-author` | `"FirstName LastName"` | `string` or `content`; also sets `document.author` |
-| `handout-date` | `none` | `string`, `content`, or `datetime`; optional, use `none` to omit; does NOT set `document.date`, only renders in header |
-| `group` | `"Course"` | `string` or `content` |
-| `location` | `none` | `string` or `content`; optional, use `none` to omit |
-| `paper` | `"us-letter"` | passes value to `page.paper` |
-| `margin` | `1in` | passes value to `page.margin` |
-| `font` | `"New Computer Modern"` | passes value to `text.font` |
-| `font-size` | `12pt` | passes value to `text.size` |
-| `leading` | `0.52em` | passes value to `par.leading`|
-| `spacing` | `0.9em` | passes value to `par.spacing` |
+| `handout-title` | `none` | string or content; also sets `document.title`; omit with `none`  |
+| `handout-author` | `none` | string or content; also sets `document.author`; omit with `none`  |
+| `handout-date` | `none` | string, content, or datetime; shown in the header only, does not set `document.date`; omit with `none`  |
+| `group` | `none` | string or content; left side of the header; omit with `none`  |
+| `location` | `none` | string or content; shown after `group`; omit with `none` |
+| `paper` | `"us-letter"` | passed to `page.paper` |
+| `margin` | `1in` | passed to `page.margin` |
+| `font` | `"New Computer Modern"` | passed to `text.font` |
+| `font-size` | `12pt` | passed to `text.size` |
+| `leading` | `0.52em` | passed to `par.leading` |
+| `spacing` | `0.9em` | passed to `par.spacing` |
 
-## Roadmap
-- set this up to be used as a package, upload to typst universe.
-- at least publish repo to github.
-- configure optional bibliography in template
-- include the universal-style-sheet-for-linguistics.csl in the package, set it as default for bib.
-- add support for IPA transcription.
-- add support for syntax trees.
-- add support for phonological rules.
-- adapt or accommodate hw assignment template.
-- adapt or accommodate essay template.
-- make roadmap from iffiness handout into an outline element and include as optional element in template
-- allow user to choose their own number patterning for example list and sub-lists. ideally user can mix and match the sub-list choice (e.g. use (i.) pattern sometimes, (a.) pattern other times in the same document)
-- tagging an enum item directly isn't possible, but the user should be able to append a sub-list identifier onto the example when referencing it in text (so e.g. they can make (3.i) appear in text and still link to (3))
-- abstract the example list into a separate element, so you could have two (or more) co-occurring running lists (e.g. you could have one list for example sentences, numbered as (1), (2),... and one list for definitions numbered as I, II,... (and possibly allow a pre-number label. so it would render as Definition I, Definition II,...))
-- add support for Leipzig glossing.
-- have header render the optional args on a second line, rather than after a comma
-- allow user to specify datetime display pattern parameter for heading render
-- make header fully customizable (include/leave out whatever you want, choose what is placed and where, toggle on/off on certain pages or completely)
+## Planned features
 
-## CLI commands
-1. Generate new thumbnail image (use before new version releases): 
-    ```
-    typst compile template/main.typ thumbnail.png --pages 1 --ppi 250
-    ```
-2. Initialize new project with template:
-    ```
-    typst init @preview/ling-handout:0.1.0
-    ```
+- Optional bibliography with the Unified Style Sheet for Linguistics
+- IPA, Leipzig glossing, syntax trees, and phonological rules
+- Referencing sub-items, e.g. (3.i)
+- Configurable example and sub-item numbering
+- Customizable header layout
+
+## License
+
+MIT-0. See `LICENSE`.

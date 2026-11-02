@@ -145,3 +145,149 @@ Packages are submitted as pull requests to `typst/packages`. Re-read that repo's
 - Bump `version` in `typst.toml`, update the import in `template/main.typ`, regenerate the thumbnail. Tag the release only after the PR is merged.
 - Add a new folder `packages/preview/ling-handout/<new-version>/` in the fork (leave older version folders alone) and open a PR with the "update" box ticked.
 - Add a new `@local` symlink for the new version to keep testing locally.
+
+## Releasing a new version
+
+Set the version once at the start; the commands below use these variables.
+They only last for one terminal session, so set them again in a new window.
+
+```bash
+OLD=0.1.0
+NEW=0.2.0
+SCRIPTS=/Users/turner/Documents/linguistics/scripts
+PROJ=$SCRIPTS/ling-handout
+FORK=$SCRIPTS/typst-packages
+DEST=$FORK/packages/preview/ling-handout/$NEW
+PREVIEW="$HOME/Library/Application Support/typst/packages/preview"
+LOCAL="$HOME/Library/Application Support/typst/packages/local/ling-handout"
+```
+
+Choosing the number (SemVer): patch (0.1.1) for bug fixes; minor (0.2.0) for
+new features or anything that changes how existing documents look or behave. typst-packages doesn't seem to like you to update the major version, so keep at 0.
+
+### 1. Prepare the project
+
+1. Make and commit the changes in `$PROJ`.
+2. Bump the version everywhere it appears:
+   ```bash
+   cd "$PROJ"
+   grep -rn "$OLD" --exclude-dir=.git .
+   ```
+   Expected hits: `version` in `typst.toml`, the import in `template/main.typ`,
+   and the imports and `typst init` line in `README.md`. Update each to `$NEW`.
+   Leave `$OLD` in this file's examples if they're meant as history.
+3. Update the README for any new or changed features and parameters. Every
+   code block needs a language: `typst` for Typst code, `text` for rendered
+   output, `bash` for commands. Unlabeled blocks are parsed as Typst, and the
+   package-check bot flags syntax errors in them (e.g. a lone `*`).
+4. Add a local symlink for the new version (keep the old one so old documents
+   still compile):
+   ```bash
+   ln -s "$PROJ" "$LOCAL/$NEW"
+   ```
+5. Test locally (see "Test locally" above), using `@local/ling-handout:$NEW`,
+   and run the PDF and customization checks. Also compile an existing handout
+   that imports `$OLD` to make sure nothing about the old setup broke.
+6. Commit and push to your GitHub repo. Don't tag yet.
+   ```bash
+   cd "$PROJ"
+   git add -A
+   git commit -m "Prepare $NEW"
+   git push
+   ```
+
+### 2. Refresh the fork
+
+The fork falls behind `typst/packages` between releases, so sync it first.
+
+1. On GitHub, open `github.com/tgj5/packages` and click **Sync fork → Update
+   branch** (or run `gh repo sync tgj5/packages`).
+2. Make a fresh sparse clone (simplest; avoids shallow-clone pull problems):
+   ```bash
+   rm -rf "$FORK"
+   cd "$SCRIPTS"
+   git clone --depth 1 --filter=blob:none --sparse git@github.com:tgj5/packages.git typst-packages
+   cd "$FORK"
+   git sparse-checkout set packages/preview/ling-handout
+   git checkout -b ling-handout-$NEW
+   ```
+   If SSH fails, see "SSH troubleshooting" below.
+3. Copy the package files into a new version folder. Never edit an existing
+   version folder.
+   ```bash
+   mkdir -p "$DEST"
+   cd "$PROJ"
+   cp typst.toml lib.typ README.md LICENSE "$DEST"/
+   cp -R template "$DEST"/
+   ls -R "$DEST"
+   ```
+   Only those files plus `template/main.typ` (no PDFs, no `.DS_Store`).
+
+### 3. Thumbnail and fork test
+
+1. Link Typst's `preview` folder to the fork (check nothing is there first):
+   ```bash
+   ls "$HOME/Library/Application Support/typst/packages/"   # expect only: local
+   ln -s "$FORK/packages/preview" "$PREVIEW"
+   ls "$PREVIEW/ling-handout/$NEW"                          # should list your files
+   ```
+2. Generate and optimize the thumbnail in the fork's package folder:
+   ```bash
+   cd "$DEST"
+   typst compile -f png --pages 1 --ppi 250 template/main.typ thumbnail.png
+   oxipng -o 4 --strip safe thumbnail.png
+   file thumbnail.png && ls -lh thumbnail.png   # longer edge >= 1080px, < 3MB
+   cp thumbnail.png "$PROJ"/
+   ```
+3. Test the published form, outside the package folder:
+   ```bash
+   cd /tmp && rm -rf test-preview
+   typst init @preview/ling-handout:$NEW test-preview
+   typst compile test-preview/main.typ && open test-preview/main.pdf
+   ```
+4. Remove the link and the test copy (no trailing slash on the link):
+   ```bash
+   rm "$PREVIEW"
+   rm -rf /tmp/test-preview
+   ```
+
+### 4. Submit the PR
+
+1. Check, commit, and push:
+   ```bash
+   cd "$FORK"
+   git status            # only packages/preview/ling-handout/$NEW should be new
+   git add packages/preview/ling-handout/$NEW
+   git commit -m "ling-handout:$NEW"
+   git push -u origin ling-handout-$NEW
+   ```
+2. On `github.com/tgj5/packages`, click **Compare & pull request**. Confirm the
+   base is `typst/packages` / `main` and the diff contains only
+   `packages/preview/ling-handout/$NEW/`.
+3. Title: `ling-handout:$NEW`. In the PR template, tick "an update for a
+   package" and complete the checklist. Briefly list what changed.
+4. Fix anything the `typst-package-check` bot or reviewers raise by editing
+   files in `$DEST`, then `git add`, `git commit`, `git push` on the same branch.
+   Mirror every fix in `$PROJ`.
+
+### 5. After merge
+
+```bash
+cd "$PROJ"
+git add thumbnail.png
+git commit -m "Thumbnail for $NEW"
+git tag v$NEW
+git push && git push --tags
+```
+
+Final check with no symlink in place:
+
+```bash
+cd /tmp && rm -rf final-check
+typst init @preview/ling-handout:$NEW final-check
+typst compile final-check/main.typ
+rm -rf final-check
+```
+
+Then update this file: bump the `compiler` note if the minimum Typst version
+changed, and remove finished items from the Todo list.

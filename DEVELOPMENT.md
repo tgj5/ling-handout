@@ -4,7 +4,7 @@ Maintainer (tgj5) notes for ling-handout. This file is listed in `exclude` in `t
 
 ## Project layout
 
-```
+```text
 ling-handout/
 ├── typst.toml          # manifest: name, version, entrypoint, template config
 ├── lib.typ             # the template library: ex, ling-handout, to-plain (flatten content to plain text for PDF metadata)
@@ -72,7 +72,7 @@ typst init @local/ling-handout:0.1.0 test-handout
 
 Change the import statement in the new project's ``main.typ`` file to the ``@local`` environment path.
 
-```
+```typst
 #import "@local/ling-handout:0.1.0": ling-handout, ex
 ```
 
